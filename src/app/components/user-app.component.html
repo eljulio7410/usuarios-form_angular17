@@ -5,13 +5,7 @@
     (click)="setOpen()">{{open == true? 'Cerrar': 'Crear Usuario'}}</button>
     
     <div class="row">
-        @if (open) {
-        <div class="col">
-            <app-user-form 
-            [user]="userSelected"
-            (newUserEventEmitter)="addUser($event)"></app-user-form>
-        </div>
-        }@else {
+        
         <div class="col">
             <app-user 
             [users]="users" 
@@ -19,6 +13,11 @@
             (selectUserEventEmitter)="setSelectUser($event)"
             ></app-user>
         </div>    
-        }
     </div>
 </div>
+@if (open) {
+    <app-user-form 
+    [user]="userSelected"
+    (newUserEventEmitter)="addUser($event)"
+    (openEventEmitter)="setOpen()"></app-user-form>
+}
