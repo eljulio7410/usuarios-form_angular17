@@ -1,50 +1,53 @@
 import { Component, OnInit } from '@angular/core';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
-import { UserComponent } from './user/user.component';
-import { UserFormComponent } from './user-form/user-form.component';
 import Swal from 'sweetalert2';
+import { Router, RouterOutlet } from '@angular/router';
+import { NavbarComponent } from './navbar/navbar.component';
+import { SharingDataService } from '../services/sharing-data.service';
 
 @Component({
   selector: 'app-user-app',
   standalone: true,
-  imports: [
-    UserComponent,
-    UserFormComponent,
-  ],
+  imports: [RouterOutlet,NavbarComponent],
   templateUrl: './user-app.component.html'
 })
 export class UserAppComponent implements OnInit{
 
-  title: string =  'Listado de usuarios!';
-
   users: User[] = [];
 
-  userSelected: User;
-
-  open: boolean = false;
-
-  constructor(private service: UserService){
-    this.userSelected = new User();
+  constructor(
+    private router: Router,
+    private service: UserService,
+    private sharingData: SharingDataService
+  ){
+    
   }
   ngOnInit(): void {
     this.service.findAll().subscribe(users => this.users = users);
+    this.addUser();
+    this.removeUser();
   }
 
-  addUser(user: User){
-    if (user.id > 0){
+  addUser(){
+    this.sharingData.newUserEventEmitter.subscribe(user => {
+      if (user.id > 0){
       this.users = this.users.map(u => (u.id == user.id) ? { ...user }: u)
     } else {
       this.users = [... this.users, { ... user, id: new Date().getTime() }];
     }
+      this.router.navigate(['/users'], { state: { users: this.users } });
+
     Swal.fire({
       title: "Guardado",
       text: "Usuario guardado con exito!",
       icon: "success"
     });
-    this.userSelected = new User(); 
+    
+    }); 
   }
-  removeUser(id: number): void{
+  removeUser(): void{
+    this.sharingData.idUserEventemmiter.subscribe( id => {
     Swal.fire({
       title: "Esta seguro de eliminar?",
       text: "El usuario sera eliminado del sistema!",
@@ -56,6 +59,10 @@ export class UserAppComponent implements OnInit{
     }).then((result) => {
       if (result.isConfirmed) {
         this.users = this.users.filter( user => user.id != id);
+        this.router.navigate(['/users/create'], {skipLocationChange: true }).then(() => {
+          this.router.navigate(['/users'], { state: { users: this.users } });
+        })
+
         Swal.fire({
           title: "Eliminado!",
           text: "El usuario ha sido eliminado.",
@@ -63,14 +70,8 @@ export class UserAppComponent implements OnInit{
         });
       }
     });
-    
-  }
+    });
 
-  setSelectUser(userRow: User): void {
-    this.userSelected = { ...userRow };
-    this.open = true;
-  }
-  setOpen() {
-    this.open = !this.open;
+    
   }
 }
